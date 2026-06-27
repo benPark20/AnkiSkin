@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AnkiDeck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── TOKENS ────────────────────────────────────────── */
+    :root[data-theme="dark"] {
+      --bg:           #0D0D12;
+      --surface:      #18181F;
+      --surface-el:   #222230;
+      --surface-hov:  #2C2C3A;
+      --border:       #2A2A38;
+      --border-hov:   #3E3E54;
+      --text:         #EEEDF8;
+      --text-2:       #A8A7C0;
+      --text-3:       #6A6A85;
+      --accent:       #7B6EF5;
+      --accent-lt:    #A69CFA;
+      --accent-bg:    rgba(123,110,245,.13);
+      --again:        #E85858;
+      --again-bg:     rgba(232,88,88,.12);
+      --hard:         #F0A030;
+      --hard-bg:      rgba(240,160,48,.12);
+      --good:         #2DC88A;
+      --good-bg:      rgba(45,200,138,.12);
+      --easy:         #5B9EF5;
+      --easy-bg:      rgba(91,158,245,.12);
+      --shadow-sm:    0 1px 4px rgba(0,0,0,.5);
+      --shadow-md:    0 4px 20px rgba(0,0,0,.5);
+      --shadow-lg:    0 12px 40px rgba(0,0,0,.6);
+      --card-shadow:  0 0 0 1px var(--border), 0 10px 40px rgba(0,0,0,.55), 0 0 60px rgba(123,110,245,.06);
+    }
+    :root[data-theme="light"] {
+      --bg:           #F3F2FB;
+      --surface:      #FFFFFF;
+      --surface-el:   #EFEEFC;
+      --surface-hov:  #E6E4F8;
+      --border:       #E0DFF0;
+      --border-hov:   #C8C6E0;
+      --text:         #1A1928;
+      --text-2:       #4E4D68;
+      --text-3:       #9898B0;
+      --accent:       #6458E8;
+      --accent-lt:    #8378F0;
+      --accent-bg:    rgba(100,88,232,.10);
+      --again:        #D44444;
+      --again-bg:     rgba(212,68,68,.10);
+      --hard:         #C87800;
+      --hard-bg:      rgba(200,120,0,.10);
+      --good:         #1E9E6A;
+      --good-bg:      rgba(30,158,106,.10);
+      --easy:         #3578D8;
+      --easy-bg:      rgba(53,120,216,.10);
+      --shadow-sm:    0 1px 4px rgba(0,0,0,.08);
+      --shadow-md:    0 4px 20px rgba(0,0,0,.10);
+      --shadow-lg:    0 12px 40px rgba(0,0,0,.14);
+      --card-shadow:  0 0 0 1px var(--border), 0 10px 40px rgba(0,0,0,.10);
+    }
+
+    /* ── RESET ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── LAYOUT ───────────────────────────────────────── */
+    #app { display: flex; height: 100vh; height: 100dvh; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 216px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 16px 10px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; padding: 8px 10px 24px; }
+    .logo-mark {
+      width: 30px; height: 30px; background: var(--accent);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .logo-name {
+      font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 700;
+      letter-spacing: -.4px; color: var(--text);
+    }
+    .nav-btn {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 9px 10px; border: none; background: none;
+      border-radius: 8px; cursor: pointer;
+      color: var(--text-3); font-size: 13.5px; font-weight: 500;
+      font-family: inherit; text-align: left;
+      transition: background .14s, color .14s;
+    }
+    .nav-btn:hover { background: var(--surface-el); color: var(--text-2); }
+    .nav-btn.active { background: var(--accent-bg); color: var(--accent-lt); }
+    .nav-btn svg { flex-shrink: 0; }
+    .sidebar-spacer { flex: 1; }
+
+    /* Main */
+    #main { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
+
+    /* Bottom nav (mobile) */
+    #bnav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-top: 1px solid var(--border);
+      height: 60px; grid-template-columns: repeat(3, 1fr);
+      z-index: 90; padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bnav-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; border: none; background: none; cursor: pointer;
+      color: var(--text-3); font-size: 10px; font-weight: 500; font-family: inherit;
+      transition: color .14s;
+    }
+    .bnav-btn.active { color: var(--accent); }
+    .bnav-btn svg { width: 22px; height: 22px; }
+
+    @media (max-width: 720px) {
+      #sidebar { display: none; }
+      #bnav { display: grid; }
+      #main { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+    }
+
+    /* ── PAGES ────────────────────────────────────────── */
+    .page { display: none; }
+    .page.active { display: block; animation: pgIn .2s ease; }
+    @keyframes pgIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ph { /* page header */
+      padding: 28px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .ph-title {
+      font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700;
+      letter-spacing: -.3px;
+    }
+    .pc { padding: 24px 28px; } /* page content */
+
+    @media (max-width: 720px) {
+      .ph { padding: 18px 16px 14px; }
+      .pc { padding: 16px; }
+    }
+
+    /* ── BANNER ───────────────────────────────────────── */
+    #banner {
+      display: none; align-items: center; gap: 10px;
+      background: var(--again-bg); border-bottom: 1px solid rgba(232,88,88,.2);
+      padding: 10px 20px; font-size: 12.5px; color: var(--again);
+    }
+    #banner.show { display: flex; }
+    #banner a { color: var(--again); text-decoration: underline; cursor: pointer; }
+
+    /* ── DECK GRID ────────────────────────────────────── */
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .deck-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; cursor: pointer; position: relative; overflow: hidden;
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .deck-card::after {
+      content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-lt));
+      opacity: 0; transition: opacity .15s;
+    }
+    .deck-card:hover { border-color: var(--border-hov); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .deck-card:hover::after { opacity: 1; }
+
+    .deck-name {
+      font-family: 'Outfit', sans-serif; font-size: 14.5px; font-weight: 600;
+      margin-bottom: 14px; padding-right: 28px; word-break: break-word;
+    }
+    .deck-counts { display: flex; gap: 18px; }
+    .dc-val {
+      font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; line-height: 1;
+      display: block;
+    }
+    .dc-lbl {
+      font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text-3); display: block; margin-top: 3px;
+    }
+    .dc-new  .dc-val { color: var(--easy); }
+    .dc-lrn  .dc-val { color: var(--hard); }
+    .dc-rev  .dc-val { color: var(--again); }
+    .deck-bar { margin-top: 14px; height: 2px; background: var(--surface-el); border-radius: 1px; }
+    .deck-bar-fill { height: 100%; border-radius: 1px; background: var(--accent); transition: width .3s; }
+    .deck-caught { margin-top: 12px; font-size: 11px; color: var(--good); }
+
+    .deck-menu-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 26px; height: 26px; border-radius: 6px;
+      background: var(--surface-el); border: 1px solid var(--border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-3); opacity: 0; transition: opacity .15s;
+    }
+    .deck-card:hover .deck-menu-btn { opacity: 1; }
+
+    /* ── SKELETONS ────────────────────────────────────── */
+    .skel {
+      background: linear-gradient(90deg, var(--surface-el) 0%, var(--surface-hov) 50%, var(--surface-el) 100%);
+      background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 12px;
+    }
+    @keyframes shimmer { 0%{background-position:200%}100%{background-position:-200%} }
+
+    /* ── STUDY OVERLAY ────────────────────────────────── */
+    #study-overlay {
+      display: none; position: fixed; inset: 0;
+      background: var(--bg); z-index: 100;
+      flex-direction: column;
+    }
+    #study-overlay.open { display: flex; animation: pgIn .2s ease; }
+
+    .study-topbar {
+      flex-shrink: 0; padding: 14px 20px;
+      display: flex; align-items: center; gap: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      background: var(--surface-el); border: 1px solid var(--border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-2); transition: all .14s;
+    }
+    .back-btn:hover { background: var(--surface-hov); color: var(--text); }
+    .study-deck-lbl {
+      font-family: 'Outfit', sans-serif; font-size: 14.5px; font-weight: 600;
+      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .prog-wrap { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .prog-bar {
+      width: 100px; height: 4px; background: var(--surface-el); border-radius: 2px; overflow: hidden;
+    }
+    .prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .35s ease; }
+    .prog-txt {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); white-space: nowrap;
+    }
+
+    .study-body {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 20px; overflow: hidden;
+    }
+
+    /* Card flip */
+    .card-scene { width: 100%; max-width: 600px; height: min(380px, 56vh); perspective: 1200px; }
+    .card-flip {
+      width: 100%; height: 100%; position: relative;
+      transform-style: preserve-3d;
+      transition: transform .52s cubic-bezier(.4,0,.2,1);
+    }
+    .card-flip.flipped { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: var(--surface); border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .card-face-back { transform: rotateY(180deg); }
+
+    .card-face-lbl {
+      flex-shrink: 0; padding: 9px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--text-3); font-weight: 600;
+    }
+    .card-iframe {
+      flex: 1; border: none; width: 100%; background: transparent;
+      display: block;
+    }
+
+    /* Glow effect on flip */
+    .card-flip.flipped .card-face-back {
+      box-shadow: var(--card-shadow), 0 0 80px rgba(123,110,245,.12);
+    }
+
+    .study-footer {
+      flex-shrink: 0; padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .show-ans-btn {
+      width: 100%; height: 50px; border: none; cursor: pointer;
+      background: var(--accent); color: #fff;
+      border-radius: 10px; font-size: 14.5px; font-weight: 600;
+      font-family: 'Inter', sans-serif; letter-spacing: -.1px;
+      transition: background .14s, transform .14s;
+    }
+    .show-ans-btn:hover { background: var(--accent-lt); transform: translateY(-1px); }
+    .show-ans-btn:active { transform: translateY(0); }
+
+    .hint-row {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-top: 10px; font-size: 11.5px; color: var(--text-3);
+    }
+    .hint-key {
+      background: var(--surface-el); border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 5px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    }
+
+    .rate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .rate-btn {
+      height: 52px; border: none; cursor: pointer; border-radius: 10px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      font-family: 'Inter', sans-serif; transition: all .14s;
+    }
+    .rate-btn:hover { transform: translateY(-2px); }
+    .rate-btn:active { transform: translateY(0); }
+    .rl { font-size: 13px; font-weight: 700; }
+    .rt { font-size: 9.5px; opacity: .65; font-weight: 400; }
+    .btn-again { background: var(--again-bg); color: var(--again); }
+    .btn-hard  { background: var(--hard-bg);  color: var(--hard); }
+    .btn-good  { background: var(--good-bg);  color: var(--good); }
+    .btn-easy  { background: var(--easy-bg);  color: var(--easy); }
+    .btn-again:hover { background: var(--again); color: #fff; }
+    .btn-hard:hover  { background: var(--hard);  color: #fff; }
+    .btn-good:hover  { background: var(--good);  color: #fff; }
+    .btn-easy:hover  { background: var(--easy);  color: #fff; }
+    @media (max-width: 400px) { .rate-btn { height: 46px; } .rl { font-size: 12px; } }
+
+    /* Session complete */
+    .done-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px; text-align: center; gap: 16px;
+    }
+    .done-icon { font-size: 56px; animation: pop .5s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+    .done-title { font-family:'Outfit',sans-serif; font-size:26px; font-weight:700; }
+    .done-sub { color: var(--text-2); font-size: 14px; }
+    .done-stats { display: flex; gap: 28px; margin-top: 4px; }
+    .ds-val { font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:500; display:block; }
+    .ds-lbl { font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3); }
+
+    /* ── FORMS ────────────────────────────────────────── */
+    .form-card { background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px; }
+    .form-card-lbl { font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);font-weight:600;margin-bottom:14px; }
+    .fg { margin-bottom:13px; }
+    .fl { display:block;font-size:12.5px;font-weight:500;color:var(--text-2);margin-bottom:5px; }
+    .fi, .fta, .fsel {
+      width:100%; background:var(--bg); border:1px solid var(--border);
+      border-radius:8px; padding:9px 13px; color:var(--text);
+      font-size:13.5px; font-family:inherit; outline:none;
+      transition: border-color .14s;
+    }
+    .fi:focus, .fta:focus, .fsel:focus { border-color: var(--accent); }
+    .fta { min-height:90px; resize:vertical; }
+    .fsel {
+      appearance:none; cursor:pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236A6A85' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 11px center;
+      padding-right:32px;
+    }
+    .fhint { font-size:11px;color:var(--text-3);margin-top:5px;line-height:1.5; }
+
+    /* Buttons */
+    .btn { display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;transition:all .14s; }
+    .btn-primary { background:var(--accent);color:#fff; }
+    .btn-primary:hover { background:var(--accent-lt); transform:translateY(-1px); }
+    .btn-ghost { background:var(--surface-el);color:var(--text-2);border:1px solid var(--border); }
+    .btn-ghost:hover { background:var(--surface-hov); }
+    .btn-danger { background:var(--again-bg);color:var(--again);border:1px solid rgba(232,88,88,.2); }
+    .btn-danger:hover { background:var(--again);color:#fff; }
+    .btn-sm { padding:7px 13px; font-size:12.5px; }
+
+    /* ── SETTINGS ─────────────────────────────────────── */
+    .srow {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:13px 0; border-bottom:1px solid var(--border);
+    }
+    .srow:last-child { border-bottom:none; }
+    .srow-label { font-size:13.5px; font-weight:500; }
+    .srow-desc { font-size:11.5px; color:var(--text-3); margin-top:2px; }
+
+    /* Toggle */
+    .tog { position:relative;width:38px;height:21px;flex-shrink:0; }
+    .tog input { opacity:0;width:0;height:0;position:absolute; }
+    .tog-sl {
+      position:absolute;inset:0;background:var(--surface-el);border-radius:21px;cursor:pointer;
+      transition:background .2s;
+    }
+    .tog-sl::before {
+      content:'';position:absolute;width:15px;height:15px;background:#fff;
+      border-radius:50%;left:3px;top:3px;transition:transform .2s;
+    }
+    .tog input:checked + .tog-sl { background:var(--accent); }
+    .tog input:checked + .tog-sl::before { transform:translateX(17px); }
+
+    /* Status dot */
+    .sdot { width:7px;height:7px;border-radius:50%;background:var(--text-3);flex-shrink:0; }
+    .sdot.ok  { background:var(--good); }
+    .sdot.ing { background:var(--hard); animation:pulse 1.1s infinite; }
+    .sdot.err { background:var(--again); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* Sync btn */
+    .sync-btn {
+      display:flex;align-items:center;gap:7px;
+      padding:7px 14px; border-radius:8px;
+      background:var(--surface-el); border:1px solid var(--border);
+      color:var(--text-2); cursor:pointer; font-size:12.5px; font-weight:500;
+      font-family:inherit; transition:all .14s;
+    }
+    .sync-btn:hover { background:var(--accent-bg);border-color:var(--accent);color:var(--accent); }
+    .sync-btn.spinning svg { animation:spin .8s linear infinite; }
+    @keyframes spin { from{transform:rotate(0)}to{transform:rotate(360deg)} }
+
+    /* ── TOASTS ───────────────────────────────────────── */
+    #toasts {
+      position:fixed;top:18px;right:18px;
+      display:flex;flex-direction:column;gap:8px;z-index:999;
+    }
+    .toast {
+      display:flex;align-items:center;gap:10px;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;padding:11px 15px;font-size:13px;
+      box-shadow:var(--shadow-lg);max-width:280px;
+      animation:toastIn .22s ease;
+      transition:opacity .22s,transform .22s;
+    }
+    .toast.out { opacity:0;transform:translateX(14px); }
+    @keyframes toastIn { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
+    .toast.ok  { border-color:var(--good);  color:var(--good); }
+    .toast.err { border-color:var(--again); color:var(--again); }
+    .toast.inf { border-color:var(--accent);color:var(--accent); }
+
+    /* ── MODAL ────────────────────────────────────────── */
+    #modal-bg {
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.55);z-index:200;
+      align-items:center;justify-content:center;padding:16px;
+    }
+    #modal-bg.open { display:flex;animation:fadeIn .18s ease; }
+    @keyframes fadeIn { from{opacity:0}to{opacity:1} }
+    .modal {
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:16px;padding:26px;width:100%;max-width:440px;
+      box-shadow:var(--shadow-lg);
+      animation:modalIn .22s cubic-bezier(.34,1.3,.64,1);
+    }
+    @keyframes modalIn { from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1} }
+    .modal-title { font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;margin-bottom:18px; }
+    .modal-footer { display:flex;gap:8px;justify-content:flex-end;margin-top:22px; }
+
+    /* ── EMPTY / INFO ─────────────────────────────────── */
+    .empty { text-align:center;padding:56px 24px;color:var(--text-3); }
+    .empty-icon { font-size:44px;margin-bottom:14px; }
+    .empty-title { font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;color:var(--text-2);margin-bottom:8px; }
+    .empty-body { font-size:13.5px;line-height:1.65; }
+
+    .info-box {
+      background:var(--surface-el);border:1px solid var(--border);
+      border-radius:8px;padding:13px 15px;font-size:12px;line-height:1.65;color:var(--text-2);
+    }
+    .info-box code {
+      background:var(--surface-hov);border-radius:3px;
+      padding:1px 5px;font-family:'JetBrains Mono',monospace;font-size:11px;
+    }
+    .info-box strong { color:var(--text); }
+
+    /* ── SCROLLBAR ────────────────────────────────────── */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border);border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--text-3); }
+  </style>
+</head>
+<body>
+
+<!-- Toast tray -->
+<div id="toasts"></div>
+
+<!-- Study overlay (full-screen) -->
+<div id="study-overlay">
+  <div class="study-topbar" id="study-topbar">
+    <button class="back-btn" onclick="leaveStudy()">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
+      </svg>
+    </button>
+    <span class="study-deck-lbl" id="study-deck-lbl"></span>
+    <div class="prog-wrap">
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <span class="prog-txt" id="prog-txt">0 / 0</span>
+    </div>
+  </div>
+  <div class="study-body" id="study-body"></div>
+  <div class="study-footer" id="study-footer"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-inner"></div>
+</div>
+
+<div id="app">
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="logo">
+      <div class="logo-mark">⚡</div>
+      <span class="logo-name">AnkiDeck</span>
+    </div>
+    <button class="nav-btn active" data-p="decks" onclick="nav('decks')">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM11 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"/>
+      </svg>
+      Decks
+    </button>
+    <button class="nav-btn" data-p="add" onclick="nav('add')">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+      </svg>
+      Add Card
+    </button>
+    <div class="sidebar-spacer"></div>
+    <button class="nav-btn" data-p="settings" onclick="nav('settings')">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"/>
+      </svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- Main -->
+  <main id="main">
+
+    <!-- Connection banner -->
+    <div id="banner">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
+      </svg>
+      AnkiConnect not reachable — Anki may not be running.
+      <a onclick="nav('settings')">Configure connection →</a>
+    </div>
+
+    <!-- DECKS PAGE -->
+    <div id="pg-decks" class="page active">
+      <div class="ph">
+        <h1 class="ph-title">My Decks</h1>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="sdot" id="hd-dot"></div>
+            <span id="hd-txt" style="font-size:11.5px;color:var(--text-3)">…</span>
+          </div>
+          <button class="sync-btn" id="sync-btn" onclick="doSync()">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/>
+            </svg>
+            Sync
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openNewDeck()">+ New Deck</button>
+        </div>
+      </div>
+      <div class="pc">
+        <div class="deck-grid" id="deck-grid">
+          <div class="skel" style="height:118px"></div>
+          <div class="skel" style="height:118px"></div>
+          <div class="skel" style="height:118px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD CARD PAGE -->
+    <div id="pg-add" class="page">
+      <div class="ph">
+        <h1 class="ph-title">Add Card</h1>
+      </div>
+      <div class="pc">
+        <div class="form-card">
+          <p class="form-card-lbl">Card Details</p>
+          <div class="fg">
+            <label class="fl">Deck</label>
+            <select class="fsel" id="add-deck"></select>
+          </div>
+          <div class="fg">
+            <label class="fl">Note type</label>
+            <select class="fsel" id="add-model">
+              <option>Basic</option>
+              <option>Basic (and reversed card)</option>
+              <option>Cloze</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl">Front</label>
+            <textarea class="fta" id="add-front" placeholder="Question…"></textarea>
+          </div>
+          <div class="fg">
+            <label class="fl">Back</label>
+            <textarea class="fta" id="add-back" placeholder="Answer…"></textarea>
+          </div>
+          <div class="fg">
+            <label class="fl">Tags <span style="font-weight:400;color:var(--text-3)">(space-separated)</span></label>
+            <input class="fi" id="add-tags" placeholder="biology chapter-3">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="addCard()">Add Card</button>
+          <button class="btn btn-ghost" onclick="clearAddForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="pg-settings" class="page">
+      <div class="ph"><h1 class="ph-title">Settings</h1></div>
+      <div class="pc">
+
+        <!-- AnkiConnect config -->
+        <div class="form-card">
+          <p class="form-card-lbl">AnkiConnect</p>
+          <div class="fg">
+            <label class="fl">Endpoint URL</label>
+            <div style="display:flex;gap:8px;">
+              <input class="fi" id="s-url" value="" style="flex:1">
+              <button class="btn btn-primary btn-sm" onclick="testConn()">Test</button>
+            </div>
+            <p class="fhint">
+              Install the
+              <a href="https://ankiweb.net/shared/info/2055492159" target="_blank" style="color:var(--accent)">AnkiConnect add-on</a>
+              (code&nbsp;<code style="font-family:monospace">2055492159</code>) and keep Anki Desktop running.
+            </p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <div class="sdot" id="s-dot"></div>
+            <span id="s-txt" style="font-size:12.5px;color:var(--text-3)">Not tested</span>
+          </div>
+        </div>
+
+        <!-- HTTPS note -->
+        <div class="form-card" style="border-color:rgba(240,160,48,.25)">
+          <p class="form-card-lbl" style="color:var(--hard)">⚠️ GitHub Pages + HTTPS</p>
+          <div class="info-box">
+            When served over <code>https://</code>, browsers block requests to AnkiConnect's <code>http://localhost</code>
+            endpoint (mixed-content policy).<br><br>
+            <strong>Fix A (recommended):</strong> In your repo → Settings → Pages, uncheck
+            <strong>Enforce HTTPS</strong>. Access the app via <code>http://username.github.io/repo</code>.<br><br>
+            <strong>Fix B:</strong> Add your Pages URL to AnkiConnect's <code>webCorsOriginList</code>,
+            then in Chrome open <em>Site Settings → Insecure content → Allow</em> for this page.
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="form-card">
+          <p class="form-card-lbl">Appearance</p>
+          <div class="srow">
+            <div>
+              <div class="srow-label">Dark mode</div>
+              <div class="srow-desc">Easier on the eyes during late-night reviews</div>
+            </div>
+            <label class="tog">
+              <input type="checkbox" id="dark-tog" checked onchange="toggleTheme()">
+              <span class="tog-sl"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Deck management -->
+        <div class="form-card" style="border-color:rgba(232,88,88,.2)">
+          <p class="form-card-lbl" style="color:var(--again)">Danger Zone</p>
+          <div class="srow">
+            <div>
+              <div class="srow-label">Delete a deck</div>
+              <div class="srow-desc">Permanently removes the deck and all its cards</div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="openDelDeck()">Delete Deck</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom nav (mobile) -->
+  <nav id="bnav">
+    <button class="bnav-btn active" data-p="decks" onclick="nav('decks')">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM11 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"/>
+      </svg>
+      Decks
+    </button>
+    <button class="bnav-btn" data-p="add" onclick="nav('add')">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+      </svg>
+      Add
+    </button>
+    <button class="bnav-btn" data-p="settings" onclick="nav('settings')">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"/>
+      </svg>
+      Settings
+    </button>
+  </nav>
+
+</div>
+
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+const S = {
+  url: localStorage.getItem('ac_url') || 'http://localhost:8765',
+  theme: localStorage.getItem('theme') || 'dark',
+  decks: [],
+  page: 'decks',
+  study: null, // populated during session
+};
+
+/* ================================================================
+   ANKICONNECT API
+================================================================ */
+async function ac(action, params = {}) {
+  const r = await fetch(S.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, version: 6, params }),
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d.result;
+}
+
+/* ================================================================
+   CONNECTION
+================================================================ */
+async function checkConn() {
+  setDot('hd-dot', 'ing'); setTxt('hd-txt', 'Connecting…');
+  try {
+    const v = await ac('version');
+    setDot('hd-dot', 'ok'); setTxt('hd-txt', `v${v}`);
+    document.getElementById('banner').classList.remove('show');
+    return true;
+  } catch {
+    setDot('hd-dot', 'err'); setTxt('hd-txt', 'Not connected');
+    document.getElementById('banner').classList.add('show');
+    return false;
+  }
+}
+
+async function testConn() {
+  const url = document.getElementById('s-url').value.trim();
+  if (!url) return;
+  S.url = url;
+  localStorage.setItem('ac_url', url);
+  setDot('s-dot', 'ing'); setTxt('s-txt', 'Testing…');
+  try {
+    const v = await ac('version');
+    setDot('s-dot', 'ok'); setTxt('s-txt', `Connected — AnkiConnect v${v}`);
+    toast('Connected!', 'ok');
+    checkConn(); loadDecks();
+  } catch (e) {
+    setDot('s-dot', 'err'); setTxt('s-txt', 'Failed — ' + e.message);
+    toast('Connection failed: ' + e.message, 'err');
+  }
+}
+
+function setDot(id, cls) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'sdot ' + (cls || '');
+}
+function setTxt(id, t) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = t;
+}
+
+/* ================================================================
+   DECKS
+================================================================ */
+async function loadDecks() {
+  const grid = document.getElementById('deck-grid');
+  grid.innerHTML = `
+    <div class="skel" style="height:118px"></div>
+    <div class="skel" style="height:118px"></div>
+    <div class="skel" style="height:118px"></div>`;
+  try {
+    const names = await ac('deckNames');
+    let statsMap = {};
+    try {
+      statsMap = await ac('getDeckStats', { decks: names });
+    } catch { /* older AnkiConnect — stats unavailable */ }
+
+    S.decks = names.map(n => ({ name: n, stats: statsMap[n] || {} }));
+    renderDecks();
+    fillDeckSelect('add-deck');
+  } catch (e) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">📭</div>
+      <div class="empty-title">Couldn't load decks</div>
+      <div class="empty-body">Check that Anki is running with AnkiConnect.<br>${xss(e.message)}</div>
+    </div>`;
+  }
+}
+
+function renderDecks() {
+  const grid = document.getElementById('deck-grid');
+  if (!S.decks.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">🃏</div>
+      <div class="empty-title">No decks yet</div>
+      <div class="empty-body">Create a deck to get started.</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = S.decks.map(d => {
+    const s = d.stats;
+    const nw = s.new_count    || 0;
+    const lr = s.learn_count  || 0;
+    const rv = s.review_count || 0;
+    const tot = nw + lr + rv;
+    const pct = Math.min(100, (tot / 40) * 100);
+    return `<div class="deck-card" onclick="startStudy('${xq(d.name)}')">
+      <button class="deck-menu-btn" onclick="event.stopPropagation();deckMenu('${xq(d.name)}')" title="Options">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+      </button>
+      <div class="deck-name">${xss(d.name)}</div>
+      <div class="deck-counts">
+        <div class="dc-new"><span class="dc-val">${nw}</span><span class="dc-lbl">New</span></div>
+        <div class="dc-lrn"><span class="dc-val">${lr}</span><span class="dc-lbl">Learn</span></div>
+        <div class="dc-rev"><span class="dc-val">${rv}</span><span class="dc-lbl">Review</span></div>
+      </div>
+      ${tot > 0
+        ? `<div class="deck-bar"><div class="deck-bar-fill" style="width:${pct}%"></div></div>`
+        : `<div class="deck-caught">✓ All caught up</div>`}
+    </div>`;
+  }).join('');
+}
+
+function fillDeckSelect(id) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  sel.innerHTML = S.decks.map(d => `<option value="${xss(d.name)}">${xss(d.name)}</option>`).join('');
+}
+
+/* ================================================================
+   STUDY SESSION
+================================================================ */
+async function startStudy(deckName) {
+  const overlay = document.getElementById('study-overlay');
+  document.getElementById('study-deck-lbl').textContent = deckName;
+  document.getElementById('prog-fill').style.width = '0%';
+  document.getElementById('prog-txt').textContent = '…';
+  document.getElementById('study-body').innerHTML = `<div style="color:var(--text-3);font-size:14px">Loading cards…</div>`;
+  document.getElementById('study-footer').innerHTML = '';
+  overlay.classList.add('open');
+
+  S.study = {
+    deckName, cards: [], infos: [], idx: 0, shown: false,
+    results: { again: 0, hard: 0, good: 0, easy: 0 }
+  };
+
+  try {
+    const ids = await ac('findCards', { query: `deck:"${deckName}" (is:due OR is:new)` });
+    if (!ids || !ids.length) { showDone(true); return; }
+
+    const cap = ids.slice(0, 60);
+    const infos = await ac('cardsInfo', { cards: cap });
+    S.study.cards = cap;
+    S.study.infos = infos;
+    renderCard();
+  } catch (e) {
+    document.getElementById('study-body').innerHTML =
+      `<div class="empty"><div class="empty-icon">❌</div><div class="empty-title">Couldn't load cards</div><div class="empty-body">${xss(e.message)}</div></div>`;
+    document.getElementById('study-footer').innerHTML =
+      `<button class="btn btn-primary" style="width:100%" onclick="leaveStudy()">Back to Decks</button>`;
+  }
+}
+
+function renderCard() {
+  const { infos, idx } = S.study;
+  if (idx >= infos.length) { showDone(false); return; }
+
+  const card = infos[idx];
+  const total = infos.length;
+  const pct = Math.round((idx / total) * 100);
+
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-txt').textContent = `${idx + 1} / ${total}`;
+
+  // Build iframe content — inject card CSS + base reset
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const baseStyle = `
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      html,body{height:100%;background:transparent}
+      body{
+        display:flex;align-items:center;justify-content:center;
+        padding:22px;font-family:'Inter',-apple-system,sans-serif;
+        font-size:clamp(15px,4vw,20px);line-height:1.55;
+        color:${isDark ? '#EEEDF8' : '#1A1928'};text-align:center;
+        word-break:break-word;
+      }
+      img{max-width:100%;height:auto;border-radius:8px}
+      .nightMode{color:${isDark ? '#EEEDF8' : '#1A1928'}}
+      ${card.css || ''}
+    </style>`;
+
+  const qHTML = `<!DOCTYPE html><html><head>${baseStyle}</head><body><div class="card">${card.question || ''}</div></body></html>`;
+  const aHTML = `<!DOCTYPE html><html><head>${baseStyle}</head><body><div class="card">${card.answer || ''}</div></body></html>`;
+
+  S.study.shown = false;
+
+  const body = document.getElementById('study-body');
+  body.innerHTML = `
+    <div class="card-scene">
+      <div class="card-flip" id="cflip">
+        <div class="card-face">
+          <div class="card-face-lbl">Question</div>
+          <iframe class="card-iframe" id="qframe" sandbox="allow-same-origin"></iframe>
+        </div>
+        <div class="card-face card-face-back">
+          <div class="card-face-lbl">Answer</div>
+          <iframe class="card-iframe" id="aframe" sandbox="allow-same-origin"></iframe>
+        </div>
+      </div>
+    </div>`;
+
+  // Assign srcdoc after element is in DOM
+  requestAnimationFrame(() => {
+    const qf = document.getElementById('qframe');
+    const af = document.getElementById('aframe');
+    if (qf) qf.srcdoc = qHTML;
+    if (af) af.srcdoc = aHTML;
+  });
+
+  renderFooter(false);
+}
+
+function renderFooter(showRating) {
+  const footer = document.getElementById('study-footer');
+  if (!showRating) {
+    footer.innerHTML = `
+      <button class="show-ans-btn" onclick="flipCard()">Show Answer</button>
+      <div class="hint-row">
+        <span class="hint-key">Space</span> to reveal
+        <span style="margin-left:8px;font-size:11px;color:var(--text-3)">or tap the card</span>
+      </div>`;
+    // Allow tap on card body
+    document.getElementById('study-body').onclick = flipCard;
+  } else {
+    document.getElementById('study-body').onclick = null;
+    footer.innerHTML = `
+      <div class="rate-grid">
+        <button class="rate-btn btn-again" onclick="rate(1)"><span class="rl">Again</span><span class="rt">&lt;1&nbsp;min</span></button>
+        <button class="rate-btn btn-hard"  onclick="rate(2)"><span class="rl">Hard</span><span class="rt">~10&nbsp;min</span></button>
+        <button class="rate-btn btn-good"  onclick="rate(3)"><span class="rl">Good</span><span class="rt">1&nbsp;day</span></button>
+        <button class="rate-btn btn-easy"  onclick="rate(4)"><span class="rl">Easy</span><span class="rt">4&nbsp;days</span></button>
+      </div>`;
+  }
+}
+
+function flipCard() {
+  if (S.study.shown) return;
+  S.study.shown = true;
+  const el = document.getElementById('cflip');
+  if (el) el.classList.add('flipped');
+  setTimeout(() => renderFooter(true), 260);
+}
+
+async function rate(ease) {
+  const card = S.study.infos[S.study.idx];
+  const map = { 1:'again', 2:'hard', 3:'good', 4:'easy' };
+  S.study.results[map[ease]]++;
+
+  try {
+    await ac('answerCards', { answers: [{ cardId: card.cardId, ease }] });
+  } catch (e) {
+    toast('Failed to save answer', 'err');
+  }
+
+  S.study.idx++;
+  renderCard();
+}
+
+function showDone(allGood) {
+  const { results, infos } = S.study;
+  const total = infos.length;
+  document.getElementById('prog-fill').style.width = '100%';
+  document.getElementById('prog-txt').textContent = `${total} / ${total}`;
+  document.getElementById('study-body').onclick = null;
+  document.getElementById('study-body').innerHTML = `
+    <div class="done-wrap">
+      <div class="done-icon">${allGood ? '🎉' : '✅'}</div>
+      <div class="done-title">${allGood ? 'All caught up!' : 'Session done!'}</div>
+      <div class="done-sub">${allGood ? 'No cards due right now — check back later.' : `Reviewed ${total} card${total !== 1 ? 's' : ''}`}</div>
+      ${!allGood ? `<div class="done-stats">
+        <div><span class="ds-val" style="color:var(--again)">${results.again}</span><span class="ds-lbl">Again</span></div>
+        <div><span class="ds-val" style="color:var(--hard)">${results.hard}</span><span class="ds-lbl">Hard</span></div>
+        <div><span class="ds-val" style="color:var(--good)">${results.good}</span><span class="ds-lbl">Good</span></div>
+        <div><span class="ds-val" style="color:var(--easy)">${results.easy}</span><span class="ds-lbl">Easy</span></div>
+      </div>` : ''}
+    </div>`;
+  document.getElementById('study-footer').innerHTML =
+    `<button class="btn btn-primary" style="width:100%;height:50px;font-size:14.5px" onclick="leaveStudy()">Back to Decks</button>`;
+}
+
+function leaveStudy() {
+  document.getElementById('study-overlay').classList.remove('open');
+  loadDecks();
+}
+
+/* ================================================================
+   ADD CARD
+================================================================ */
+async function loadModels() {
+  try {
+    const ms = await ac('modelNames');
+    const sel = document.getElementById('add-model');
+    sel.innerHTML = ms.map(m => `<option>${xss(m)}</option>`).join('');
+  } catch { /* ignore */ }
+}
+
+async function addCard() {
+  const deck  = document.getElementById('add-deck').value;
+  const model = document.getElementById('add-model').value;
+  const front = document.getElementById('add-front').value.trim();
+  const back  = document.getElementById('add-back').value.trim();
+  const tags  = document.getElementById('add-tags').value.trim().split(/\s+/).filter(Boolean);
+
+  if (!deck || !front || !back) { toast('Fill in deck, front and back', 'err'); return; }
+
+  try {
+    await ac('addNote', {
+      note: {
+        deckName: deck, modelName: model,
+        fields: { Front: front, Back: back },
+        tags,
+        options: { allowDuplicate: false }
+      }
+    });
+    toast('Card added!', 'ok');
+    clearAddForm();
+    loadDecks();
+  } catch (e) {
+    toast('Failed: ' + e.message, 'err');
+  }
+}
+
+function clearAddForm() {
+  ['add-front','add-back','add-tags'].forEach(id => document.getElementById(id).value = '');
+}
+
+/* ================================================================
+   SYNC
+================================================================ */
+async function doSync() {
+  const btn = document.getElementById('sync-btn');
+  btn.classList.add('spinning');
+  try {
+    await ac('sync');
+    toast('Synced with AnkiWeb!', 'ok');
+    loadDecks();
+  } catch (e) {
+    toast('Sync failed: ' + e.message, 'err');
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+/* ================================================================
+   DECK MANAGEMENT MODALS
+================================================================ */
+function openNewDeck() {
+  openModal(`
+    <div class="modal-title">New Deck</div>
+    <div class="fg">
+      <label class="fl">Name</label>
+      <input class="fi" id="m-deck-name" placeholder="e.g. Spanish::Vocabulary" autofocus>
+      <p class="fhint">Use :: to create sub-decks (e.g. Biology::Chapter 3)</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createDeck()">Create</button>
+    </div>`);
+  setTimeout(() => document.getElementById('m-deck-name')?.focus(), 80);
+}
+
+async function createDeck() {
+  const name = document.getElementById('m-deck-name')?.value.trim();
+  if (!name) { toast('Enter a name', 'err'); return; }
+  try {
+    await ac('createDeck', { deck: name });
+    toast(`"${name}" created`, 'ok');
+    closeModal(); loadDecks();
+  } catch (e) { toast('Failed: ' + e.message, 'err'); }
+}
+
+function deckMenu(name) {
+  openModal(`
+    <div class="modal-title">${xss(name)}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-primary" style="justify-content:center" onclick="closeModal();startStudy('${xq(name)}')">Study Now</button>
+      <button class="btn btn-ghost"   style="justify-content:center" onclick="closeModal();renameDeckModal('${xq(name)}')">Rename…</button>
+      <button class="btn btn-danger"  style="justify-content:center" onclick="confirmDel('${xq(name)}')">Delete Deck</button>
+      <button class="btn btn-ghost"   style="justify-content:center" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+
+function renameDeckModal(oldName) {
+  openModal(`
+    <div class="modal-title">Rename Deck</div>
+    <div class="fg">
+      <label class="fl">New name</label>
+      <input class="fi" id="m-rename" value="${xss(oldName)}" autofocus>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="renameDeck('${xq(oldName)}')">Rename</button>
+    </div>`);
+  setTimeout(() => document.getElementById('m-rename')?.focus(), 80);
+}
+
+async function renameDeck(oldName) {
+  const newName = document.getElementById('m-rename')?.value.trim();
+  if (!newName || newName === oldName) { closeModal(); return; }
+  try {
+    await ac('changeDeck', { cards: await ac('findCards', { query: `deck:"${oldName}"` }), deck: newName });
+    toast('Deck renamed', 'ok'); closeModal(); loadDecks();
+  } catch (e) {
+    // Fallback: some AC versions have renameDeck action
+    try {
+      await ac('renameDeck', { oldName, newName });
+      toast('Deck renamed', 'ok'); closeModal(); loadDecks();
+    } catch (e2) { toast('Rename failed: ' + e2.message, 'err'); }
+  }
+}
+
+function openDelDeck() {
+  openModal(`
+    <div class="modal-title">Delete a Deck</div>
+    <div class="fg">
+      <label class="fl">Deck</label>
+      <select class="fsel" id="m-del-deck">
+        ${S.decks.map(d => `<option value="${xss(d.name)}">${xss(d.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDel(document.getElementById('m-del-deck').value)">Continue</button>
+    </div>`);
+}
+
+function confirmDel(name) {
+  openModal(`
+    <div class="modal-title" style="color:var(--again)">⚠️ Delete deck?</div>
+    <p style="font-size:13.5px;color:var(--text-2);margin-bottom:8px;">
+      <strong>${xss(name)}</strong> and all its cards will be permanently deleted. This can't be undone.
+    </p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="deleteDeck('${xq(name)}')">Yes, delete</button>
+    </div>`);
+}
+
+async function deleteDeck(name) {
+  try {
+    await ac('deleteDecks', { decks: [name], cardsToo: true });
+    toast('Deck deleted', 'ok'); closeModal(); loadDecks();
+  } catch (e) { toast('Failed: ' + e.message, 'err'); }
+}
+
+/* ================================================================
+   NAVIGATION
+================================================================ */
+function nav(p) {
+  S.page = p;
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('pg-' + p)?.classList.add('active');
+  document.querySelectorAll('[data-p]').forEach(el => {
+    el.classList.toggle('active', el.dataset.p === p);
+  });
+  if (p === 'add') { loadModels(); fillDeckSelect('add-deck'); }
+}
+
+/* ================================================================
+   THEME
+================================================================ */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  const tog = document.getElementById('dark-tog');
+  if (tog) tog.checked = t === 'dark';
+  localStorage.setItem('theme', t);
+}
+function toggleTheme() {
+  applyTheme(document.getElementById('dark-tog').checked ? 'dark' : 'light');
+}
+
+/* ================================================================
+   MODAL
+================================================================ */
+function openModal(html) {
+  document.getElementById('modal-inner').innerHTML = html;
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+/* ================================================================
+   TOASTS
+================================================================ */
+function toast(msg, type = 'inf') {
+  const icons = { ok: '✓', err: '✕', inf: '●' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${xss(msg)}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 240);
+  }, 2800);
+}
+
+/* ================================================================
+   UTILS
+================================================================ */
+function xss(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function xq(s) { return xss(s); } // same treatment for onclick attr strings
+
+/* ================================================================
+   KEYBOARD SHORTCUTS
+================================================================ */
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('study-overlay');
+  if (!overlay.classList.contains('open')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if ((e.key === ' ' || e.key === 'Enter') && !S.study?.shown) {
+    e.preventDefault(); flipCard();
+  }
+  if (S.study?.shown) {
+    if (e.key === '1') rate(1);
+    if (e.key === '2') rate(2);
+    if (e.key === '3') rate(3);
+    if (e.key === '4') rate(4);
+    if (e.key === 'Escape') leaveStudy();
+  }
+});
+
+/* ================================================================
+   INIT
+================================================================ */
+applyTheme(S.theme);
+document.getElementById('s-url').value = S.url;
+
+checkConn().then(ok => { if (ok) loadDecks(); });
+</script>
+</body>
+</html>
